@@ -40,13 +40,13 @@
         <RowConstraints maxHeight="50" minHeight="50" />
     </rowConstraints>
     <ListView fx:id="actions" GridPane.columnIndex="8" GridPane.columnSpan="4" GridPane.rowIndex="1" GridPane.rowSpan="5" />
-    <Button fx:id="execute" text="Выполнить" GridPane.columnIndex="8" GridPane.columnSpan="4" GridPane.fillWidth="true" GridPane.rowIndex="5" GridPane.rowSpan="3" />
+    <Button fx:id="execute" onAction="#onExecClick" text="Выполнить" GridPane.columnIndex="8" GridPane.columnSpan="4" GridPane.fillWidth="true" GridPane.rowIndex="5" GridPane.rowSpan="3" />
     <TextArea fx:id="rows" GridPane.columnIndex="3" GridPane.columnSpan="1" GridPane.rowIndex="6" GridPane.rowSpan="1" />
     <TextArea fx:id="cols" GridPane.columnIndex="4" GridPane.columnSpan="1" GridPane.rowIndex="6" GridPane.rowSpan="1" />
-    <TextField fx:id="resField" GridPane.columnIndex="1" GridPane.columnSpan="6" GridPane.rowIndex="7" GridPane.rowSpan="4">
+    <TextArea fx:id="resField" GridPane.columnIndex="1" GridPane.columnSpan="6" GridPane.rowIndex="7" GridPane.rowSpan="4">
       <GridPane.margin>
          <Insets top="10.0" />
-      </GridPane.margin></TextField>
+      </GridPane.margin></TextArea>
     <ScrollPane fx:id="pane" GridPane.columnIndex="1" GridPane.columnSpan="6" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.rowSpan="4" GridPane.valignment="CENTER">
         <GridPane fx:id="matrixGrid" alignment="CENTER" />
     </ScrollPane>

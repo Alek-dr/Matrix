@@ -1,25 +1,27 @@
 package matrixapplication;
 
+import MatrixLib.Algorithms;
+import MatrixLib.Matrix;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.*;
 
 public class Controller implements Initializable {
 
     @FXML
     private Button execute;
     @FXML
-    private TextField resField;
+    private TextArea resField;
     @FXML
     private TextArea rows;
     @FXML
@@ -34,12 +36,14 @@ public class Controller implements Initializable {
     private ChangeListener<String> dimensiomChange;
 
     private ObservableList<String> matrixActions;
+    public static NumberFormat nf = new DecimalFormat("#.###");
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         execute.setMaxWidth(Double.MAX_VALUE);
         resField.setMaxHeight(Double.MAX_VALUE);
-        resField.setEditable(false);
+        resField.setEditable(true);
+        resField.setStyle("-fx-font-family: monospace");
         pane.setMaxWidth(Double.MAX_VALUE);
         pane.setMaxHeight(Double.MAX_VALUE);
         pane.setFitToHeight(true);
@@ -57,6 +61,8 @@ public class Controller implements Initializable {
                     setMatrix(Integer.parseInt(rows.getText()),n);
             }catch (Exception ex){}
         };
+        resField.textProperty().addListener((observable, oldValue, newValue) ->
+            resField.setScrollTop(Double.MAX_VALUE));
         List<String> act = new ArrayList<>();
         act.add("Верхнетреугольная матрица");
         matrixActions = FXCollections.observableList(act);
@@ -79,5 +85,81 @@ public class Controller implements Initializable {
                 matrixGrid.add(textArea,j,i);
             }
         }
+    }
+
+    @FXML
+    protected void onExecClick(ActionEvent event) throws Exception {
+        Matrix M = getMatrix();
+        Matrix Res = null;
+        String action = (String)actions.getSelectionModel().getSelectedItem();
+        switch (action){
+            case("Верхнетреугольная матрица"):{
+                Res = Algorithms.upTriangularMatrix(M);
+                break;
+            }
+        }
+        write(Res);
+    }
+
+    private Matrix getMatrix(){
+        int r = Integer.parseInt(rows.getText());
+        int c = Integer.parseInt(cols.getText());
+        ObservableList elems =  matrixGrid.getChildren();
+        double [][] m = new double[r][c];
+        int z = 0;
+        for (int i=0; i<r; i++){
+            for (int j=0; j<c;j++){
+                TextArea el = (TextArea)elems.get(z);
+                m[i][j] = Double.parseDouble(el.getText());
+                z++;
+            }
+        }
+        Matrix M = new Matrix(m);
+        return M;
+    }
+
+    private void write(Matrix X) {
+        StringBuilder ident = new StringBuilder();
+        StringBuilder newLine = new StringBuilder("\n");
+        StringBuilder twoSpace = new StringBuilder("  ");
+        StringBuilder oneSpace = new StringBuilder(" ");
+        int max = 1;
+        int n = 0;
+        int col = X.columns();
+        //столбец - ширина
+        Map<Integer, Integer> MaxWidth = new HashMap<Integer, Integer>();
+        //в цикле находим максимальную длину строки в каждом столбце
+        for (int j = 0; j < col; j++) {
+            max = 1;
+            MaxWidth.put(j, max);
+            for (int i = 0; i < X.rows(); i++) {
+                n = X.getSElem(i, j).length();
+                if (n > max) {
+                    max = n;
+                    MaxWidth.remove(j);
+                    MaxWidth.put(j, max);
+                }
+            }
+        }
+        int width = 0;
+        int need = 0;
+        for (int i = 0; i < X.rows(); i++) {
+            resField.appendText("\n");
+            for (int j = 0; j < X.columns(); j++) {
+                if (j != 0) {
+                    //отступ в два пробела перед началом нового столбца
+                    resField.appendText(String.valueOf(twoSpace));
+                } else {
+                    //отступ шириной в имя для первого столбца
+                    resField.appendText(String.valueOf(ident));
+                }
+                width = MaxWidth.get(j);
+                need = width - X.getSElem(i, j).length();
+                for (int z = 0; z < need; z++)
+                    resField.appendText(String.valueOf(oneSpace));
+                resField.appendText(String.valueOf(nf.format(X.getElem(i, j))));
+            }
+        }
+        resField.appendText(String.valueOf(newLine));
     }
 }
