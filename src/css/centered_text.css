@@ -1,0 +1,7 @@
+.text-area {
+    -fx-border-color: black;
+    -fx-border-width: 1px;
+}
+*.text{
+    -fx-text-alignment: center;
+}
