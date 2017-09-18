@@ -2,6 +2,7 @@ package matrixapplication;
 
 import MatrixLib.Algorithms;
 import MatrixLib.Matrix;
+import MatrixLib.SolveEquations;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -16,7 +17,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
 
-public class Controller implements Initializable {
+public class Controller implements Initializable, MessageListener {
 
     @FXML
     private Button execute;
@@ -40,6 +41,8 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        SolveEquations.addListeners(this);
+        Algorithms.addListeners(this);
         execute.setMaxWidth(Double.MAX_VALUE);
         resField.setMaxHeight(Double.MAX_VALUE);
         resField.setEditable(true);
@@ -64,7 +67,9 @@ public class Controller implements Initializable {
         resField.textProperty().addListener((observable, oldValue, newValue) ->
             resField.setScrollTop(Double.MAX_VALUE));
         List<String> act = new ArrayList<>();
-        act.add("Верхнетреугольная матрица");
+        act.add("Алгоритм Гаусса");
+        act.add("Алгоритм Гаусса-Жордана");
+        act.add("Все базисные виды");
         matrixActions = FXCollections.observableList(act);
         actions.setItems(matrixActions);
         rows.setText("3");
@@ -90,15 +95,28 @@ public class Controller implements Initializable {
     @FXML
     protected void onExecClick(ActionEvent event) throws Exception {
         Matrix M = getMatrix();
-        Matrix Res = null;
         String action = (String)actions.getSelectionModel().getSelectedItem();
         switch (action){
-            case("Верхнетреугольная матрица"):{
-                Res = Algorithms.upTriangularMatrix(M);
+            case("Алгоритм Гаусса"):{
+                Algorithms.Gauss(M);
+                break;
+            }
+            case("Алгоритм Гаусса-Жордана"):{
+                SolveEquations.gaussJordan(M);
+                break;
+            }
+            case("Все базисные виды"):{
+                Thread t = new Thread(() -> {
+                    try {
+                        SolveEquations.findAllBasis(M);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+                t.start();
                 break;
             }
         }
-        write(Res);
     }
 
     private Matrix getMatrix(){
@@ -161,5 +179,17 @@ public class Controller implements Initializable {
             }
         }
         resField.appendText(String.valueOf(newLine));
+    }
+
+    @Override
+    public void onMessage(StringBuilder str) {
+        resField.appendText(String.valueOf(str));
+        resField.appendText("\n");
+    }
+
+    @Override
+    public void onMatrixChange(Matrix M) {
+        write(M);
+        resField.appendText("\n");
     }
 }
