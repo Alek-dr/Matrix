@@ -1,10 +1,11 @@
 package MatrixLib;
 
 import javafx.application.Platform;
-import javafx.print.Collation;
 import matrixapplication.MessageListener;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 /**
  * Created by alexander on 17.09.17.
@@ -42,10 +43,10 @@ public class SolveEquations {
         if(row2ex.size()>0){
             X.message = new StringBuilder("Исключили нулевые строки: ");
             for (int i : row2ex) X.message.append(i+1 + " ");
-            Platform.runLater(()-> {
-                    listeners.forEach(l -> l.onMessage(X.message));
-                    listeners.forEach(l -> l.onMatrixChange(X));}
-            );
+            runAndWait(()->{
+                listeners.forEach(l -> l.onMessage(X.message));
+                listeners.forEach(l -> l.onMatrixChange(X));
+            });
         }
         int key = (M.col >= M.row) ? 1 : 0;
         int n;
@@ -64,23 +65,28 @@ public class SolveEquations {
             colI = col+1;
             resElem = res[2]; //сам разрешающий элемент
             X.message = new StringBuilder("Разрешающий элемент: "+ X.nf.format(resElem) +  " в " + strI + " строке, " + colI + " столбце");
-            Platform.runLater(()-> {
+            runAndWait(()-> {
                 listeners.forEach(l -> l.onMessage(X.message));
             });
             if(resElem==0) continue; //такого случиться не должно, но на всякий случай надо проверить
             if(resElem!=1) {
                 X.divRowByNumber(row, resElem);
-                sendDivMessage(X, row+1, resElem);
+                //sendDivMessage(X, row+1, resElem);
             }
             //формируем единичный столбец
-            makeOneCol(row, X, col);
+            try{
+                makeOneCol(row, X, col);
+            }catch (IncompabilitySystem ex){
+                runAndWait(()-> listeners.forEach(l -> l.onMessage(new StringBuilder(ex.getMessage()))));
+                break;
+            }
             //исключим нулевые строки, если они появились
             row2ex.clear();
             for (int i : row2ex) X.message.append(i+1 + " ");
+            row2ex = X.excludeZeroRow2();
             if(row2ex.size()>0){
-                row2ex = X.excludeZeroRow2();
                 X.message = new StringBuilder("Исключили нулевые строки: ");
-                Platform.runLater(()-> {
+                runAndWait(()-> {
                     listeners.forEach(l -> l.onMessage(X.message));
                     listeners.forEach(l -> l.onMatrixChange(X));
                 });
@@ -88,9 +94,7 @@ public class SolveEquations {
             //проверка на совместность
             if(!checkSystem(X)){
                 X.message = new StringBuilder("Система несовместна");
-                Platform.runLater(()-> {
-                    listeners.forEach(l -> l.onMessage(X.message));
-                });
+                runAndWait(()-> listeners.forEach(l -> l.onMessage(X.message)));
                 return X;
             }
         }
@@ -98,50 +102,58 @@ public class SolveEquations {
     }
 
     public static List<String> findAllBasis(Matrix M) throws Exception {
+        //Выполнить алгоритм Гаусса-Жордана, найти какой ниюудь базисный вид
         Matrix X = gaussJordan(M);
         List<Integer> ones = X.getOnesColumns();
-        List<Integer> oneCols = new ArrayList<>();
+        List<Integer> oneCols = new ArrayList<>(); //единичные столбцы
         for(int i=0; i<ones.size(); i++)
             if(ones.get(i)!=-1) oneCols.add(i);
         StringBuilder msg = new StringBuilder("Единичные столбцы: ");
         for(int i : oneCols) msg.append(i+1 + " ");
-        Platform.runLater(()-> {
-            listeners.forEach(l -> l.onMessage(msg));
-        });
+        runAndWait(()-> listeners.forEach(l -> l.onMessage(msg)));
         //для каждой комбинации найти базисный вид
+        //получить все возможные комбинации базисных переменных
         List<Integer> cols = new ArrayList<>();
         for(int i=0; i<X.col-1; i++) cols.add(i);
         Combinations.comb.clear();
         Combinations.getCombinations(cols,new Integer[0], X.row);
         Integer[] comb = oneCols.toArray(new Integer[oneCols.size()]);
-        int index = Combinations.findCombIndex(comb);
+        //получить индекс комбинации, к которой пришли на первом шаге
+        int index = Combinations.findCombIndex(comb); //индекс текущей комбинации из всех возможных
         List<StringBuilder> expr = getExpression(X, Combinations.comb.get(index));
-        Combinations.comb.remove(index);
-        StringBuilder separate = new StringBuilder("-----------------");
-        for(StringBuilder s : expr){
-            Platform.runLater(()-> {
-                listeners.forEach(l -> l.onMessage(s));
-            });
-        }
-        Platform.runLater(()-> {
+        Combinations.comb.remove(index); //удалили первую комбинацию
+        StringBuilder separate = new StringBuilder("-------------------------");
+        for(StringBuilder s : expr)
+            runAndWait(()-> listeners.forEach(l -> l.onMessage(s)));
+        runAndWait(()-> listeners.forEach(l -> l.onMessage(separate)));
+        StringBuilder workMatr = new StringBuilder("Система для дальнейших преобразований: ");
+        runAndWait(()-> {
+            listeners.forEach(l -> l.onMessage(workMatr));
+            listeners.forEach(l -> l.onMatrixChange(X));
             listeners.forEach(l -> l.onMessage(separate));
         });
+        //Цикл приведения к другим базисам
         for (Integer[] c : Combinations.comb){
-
             StringBuilder repl = new StringBuilder("Свести к единичным столбцы: ");
             for(int i : c) repl.append(i+1 + " ");
-            Platform.runLater(()-> {
-                listeners.forEach(l -> l.onMessage(repl));
-            });
-
-            Matrix Z = substitution(X,c,ones);
-            expr = getExpression(Z, c);
-            for(StringBuilder s : expr){
-                Platform.runLater(()-> {
-                    listeners.forEach(l -> l.onMessage(s));
-                });
+            Matrix Z;
+            runAndWait(()-> listeners.forEach(l -> l.onMessage(repl)));
+            try{
+                Z = substitution(X,c,ones); //Заменщение
+            }catch (IncompabilitySystem ex){
+                //runAndWait(()-> listeners.forEach(l -> l.onMessage(new StringBuilder(ex.getMessage()))));
+                continue;
+            }catch (WrongBasis ex){
+                //runAndWait(()-> listeners.forEach(l -> l.onMessage(new StringBuilder(ex.getMessage()))));
+                continue;
             }
-            Platform.runLater(()-> {
+            expr = getExpression(Z, c); //Выразить в строковом виде базисные переменные через свободные
+            for(StringBuilder s : expr)
+                runAndWait(()-> listeners.forEach(l -> l.onMessage(s)));
+            //runAndWait(()-> listeners.forEach(l -> l.onMessage(separate)));
+            runAndWait(()-> {
+                //listeners.forEach(l -> l.onMessage(workMatr));
+                listeners.forEach(l -> l.onMatrixChange(X));
                 listeners.forEach(l -> l.onMessage(separate));
             });
         }
@@ -150,7 +162,7 @@ public class SolveEquations {
 
     //region вспомогательные методы для Гаусса-Жордана и нахождения всех базисов
 
-    private static void makeOneCol(int row, Matrix x, int col) {
+    private static void makeOneCol(int row, Matrix x, int col) throws ExecutionException, InterruptedException, IncompabilitySystem {
         //метод формирует единичный столбец col матрицы x,
         //ведущая строка row
         double divBy;
@@ -159,43 +171,47 @@ public class SolveEquations {
         for(int i = 0; i< x.row; i++){
             if(i==row) continue;
             divBy = -x.matr[i][col];
+            if(divBy==0) continue;
             strI = i+1;
             strZ = row+1;
             x.addRowMultiplyedByNumber(row, divBy, i);
             x.message = new StringBuilder("Добавили к строке " + strI + " строку " + strZ + ", умноженную на " + x.nf.format(divBy));
-            Platform.runLater(()-> {
-                listeners.forEach(l -> l.onMessage(x.message));
+            runAndWait(()-> {
+                //listeners.forEach(l -> l.onMessage(x.message));
                 listeners.forEach(l -> l.onMatrixChange(x));
             });
+            if(!checkSystem(x)) throw new IncompabilitySystem("Несовместная система");
         }
     }
 
     private static boolean checkSystem(Matrix M){
         //проверка на совместность
         boolean ok = true;
+        //проверить последний элемент
+        //если он равен 0, то система совместана
         for(int i=0; i<M.row; i++){
+            if(M.matr[i][M.col-1]==0) continue;
             ok = false;
             for (int j=0; j<M.col-1; j++){
-                if(M.matr[i][M.col-1]!=0)
-                    if(M.matr[i][j]!=0){
-                        ok = true;
-                        break;
-                    }
+                if(M.matr[i][j]!=0){
+                    ok = true;
+                    break;
+                }
             }
             if(!ok) return false;
         }
         return ok;
     }
 
-    private static void sendDivMessage(Matrix M, int row, double resElem) {
+    private static void sendDivMessage(Matrix M, int row, double resElem) throws ExecutionException, InterruptedException {
         M.message = new StringBuilder("Поделили строку " + row + " на " + M.nf.format(resElem));
-        Platform.runLater(()-> {
+        runAndWait(()-> {
             listeners.forEach(l -> l.onMessage(M.message));
             listeners.forEach(l -> l.onMatrixChange(M));
         });
     }
 
-    private static double[] findResolveElem(Matrix M, List<Integer> rows) throws IncompabilityOfColumnsAndRows {
+    private static double[] findResolveElem(Matrix M, List<Integer> rows) throws IncompabilityOfColumnsAndRows, ExecutionException, InterruptedException {
         //поиск разрешающего элемента, желательно 1 или -1
         double[] res = new double[3];
         double [] candidats = new double[3];
@@ -215,7 +231,7 @@ public class SolveEquations {
                     res[2] = M.matr[i][j];
                     int str = i+1;
                     M.message = new StringBuilder("Умножили строку: "+ str +  " на -1");
-                    Platform.runLater(()-> {
+                    runAndWait(()-> {
                         listeners.forEach(l -> l.onMessage(M.message));
                         listeners.forEach(l -> l.onMatrixChange(M));
                     });
@@ -231,7 +247,7 @@ public class SolveEquations {
         return candidats;
     }
 
-    private static Matrix substitution(Matrix M, Integer [] comb, List<Integer> ones) throws IncompabilityOfColumnsAndRows {
+    private static Matrix substitution(Matrix M, Integer [] comb, List<Integer> ones) throws IncompabilityOfColumnsAndRows, ExecutionException, InterruptedException, IncompabilitySystem, WrongBasis {
         //Операция замещения
         Matrix X = new Matrix(M.row, M.col);
         X.name = M.name;
@@ -239,10 +255,16 @@ public class SolveEquations {
         X.matr = Matrix.copy(M);
         for(int i=0; i<comb.length;i++) {
             int col = comb[i];
-            if(ones.get(col)==-1){
-                int r = getRowToDiv(ones,comb, M.row);
-                X.divRowByNumber(r,M.matr[r][col]);
-                makeOneCol(r,X,col);
+            if(ones.get(col)==-1) {
+                int r = getRowToDiv(ones, comb, X.row);
+                double nToDiv = X.matr[r][col]; //число, на которое собираемся делить строку
+                if (nToDiv == 0) //Переменную невозможно сделать базисной
+                    throw new WrongBasis("Невозможно перейти к базису");
+                X.divRowByNumber(r, nToDiv);
+                //sendDivMessage(X, r + 1, nToDiv);
+                makeOneCol(r, X, col); //Сформировать единичный столбец
+                //надо обновлять, т.к. можно найти строку, которую уже использовали
+                ones = X.getOnesColumns();
             }
         }
         return X;
@@ -326,5 +348,11 @@ public class SolveEquations {
     }
 
     //endregion
+
+    public static void runAndWait(Runnable run) throws InterruptedException, ExecutionException {
+        FutureTask<Void> task = new FutureTask<>(run, null);
+        Platform.runLater(task);
+        task.get();
+    }
 
 }

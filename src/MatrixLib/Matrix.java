@@ -652,5 +652,21 @@ public class Matrix {
         return cols;
     }
 
+    public List<Integer> getZeroColumns(){
+        boolean zero;
+        List<Integer> zeros = new ArrayList<>();
+        for (int j=0; j<col; j++){
+            zero = true;
+            for(int i=0; i<row; i++){
+                if(matr[i][j]!=0){
+                    zero = false;
+                    break;
+                }
+            }
+            if (zero) zeros.add(j);
+        }
+        return zeros;
+    }
+
     //endregion
 }

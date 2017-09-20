@@ -102,7 +102,14 @@ public class Controller implements Initializable, MessageListener {
                 break;
             }
             case("Алгоритм Гаусса-Жордана"):{
-                SolveEquations.gaussJordan(M);
+                Thread t = new Thread(()->{
+                    try{
+                        SolveEquations.gaussJordan(M);
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                });
+                t.start();
                 break;
             }
             case("Все базисные виды"):{

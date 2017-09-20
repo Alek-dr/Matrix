@@ -16,3 +16,21 @@ class MultException extends Exception{
     }
 }
 
+class IncompabilityOfColumnsAndRows extends Exception{
+    public IncompabilityOfColumnsAndRows(String message){
+        super(message);
+    }
+}
+
+class IncompabilitySystem extends Exception{
+    public IncompabilitySystem(String message){
+        super(message);
+    }
+}
+
+class WrongBasis extends Exception{
+    public WrongBasis(String message){
+        super(message);
+    }
+}
+
