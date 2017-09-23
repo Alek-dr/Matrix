@@ -101,9 +101,12 @@ public class SolveEquations {
         return X;
     }
 
-    public static List<String> findAllBasis(Matrix M) throws Exception {
+    public static List<Matrix> findAllBasis(Matrix M) throws Exception {
+        List<Matrix> matrixList = new ArrayList<>();
         //Выполнить алгоритм Гаусса-Жордана, найти какой ниюудь базисный вид
         Matrix X = gaussJordan(M);
+        X.rounding();
+        matrixList.add(X);
         List<Integer> ones = X.getOnesColumns();
         List<Integer> oneCols = new ArrayList<>(); //единичные столбцы
         for(int i=0; i<ones.size(); i++)
@@ -140,6 +143,8 @@ public class SolveEquations {
             runAndWait(()-> listeners.forEach(l -> l.onMessage(repl)));
             try{
                 Z = substitution(X,c,ones); //Заменщение
+                Z.rounding();
+                matrixList.add(Z);
             }catch (IncompabilitySystem ex){
                 //runAndWait(()-> listeners.forEach(l -> l.onMessage(new StringBuilder(ex.getMessage()))));
                 continue;
@@ -157,7 +162,65 @@ public class SolveEquations {
                 listeners.forEach(l -> l.onMessage(separate));
             });
         }
-        return null;
+        return matrixList;
+    }
+
+    public static List<Integer> basicFeasibleSolution(List<Matrix> matrixList) throws ExecutionException, InterruptedException {
+        //Лист матриц содержит расширенные матрицы, приведенные к базисному виду
+        StringBuilder sol = new StringBuilder("Опорное решение: ");
+        StringBuilder separate = new StringBuilder("-------------------------");
+        List<Integer> basFesSol = new ArrayList<>();
+        boolean bfs;
+        //Matrix M;
+        for(int j=0; j<matrixList.size(); j++){
+            Matrix M = matrixList.get(j);
+            bfs = true;
+            for(int i=0; i<M.row; i++){
+                if(M.matr[i][M.col-1]<0) {
+                    bfs = false;
+                    break;
+                }
+            }
+            if(bfs){
+                basFesSol.add(j);
+                runAndWait(()-> {
+                    listeners.forEach(l -> l.onMessage(sol));
+                    listeners.forEach(l -> l.onMatrixChange(M));
+                    listeners.forEach(l -> l.onMessage(separate));
+                });
+            }
+        }
+        return basFesSol;
+    }
+
+    public static double findMax(List<Matrix> matrixList, List<Integer>bfs, double [] coefficents) throws ExecutionException, InterruptedException {
+        Matrix M;
+        double d;
+        double max = 0;
+        double x;
+        double currMax = 0;
+        List<Integer> oneCols;
+        //По опорным решениям вычисляем функцию
+        for(int i : bfs){
+            M = matrixList.get(i);
+            oneCols = M.getOnesColumns();
+            max = 0;
+            for(int j=0; j<coefficents.length-1; j++){
+                d = coefficents[j];
+                if(oneCols.get(j)!=-1){
+                    x = M.matr[oneCols.get(j)][M.col-1];
+                    currMax+=d*x;
+                }
+            }
+            currMax+=coefficents[coefficents.length-1]; //плюс свободный член самой функции
+            if(currMax>max)
+                max = currMax;
+            StringBuilder msg = new StringBuilder("Max = ");
+            msg.append(currMax);
+            runAndWait(()-> listeners.forEach(l -> l.onMessage(msg)));
+            currMax = 0;
+        }
+        return max;
     }
 
     //region вспомогательные методы для Гаусса-Жордана и нахождения всех базисов
@@ -253,6 +316,7 @@ public class SolveEquations {
         X.name = M.name;
         X.round = M.round;
         X.matr = Matrix.copy(M);
+        X.rounding();
         for(int i=0; i<comb.length;i++) {
             int col = comb[i];
             if(ones.get(col)==-1) {
@@ -263,6 +327,7 @@ public class SolveEquations {
                 X.divRowByNumber(r, nToDiv);
                 //sendDivMessage(X, r + 1, nToDiv);
                 makeOneCol(r, X, col); //Сформировать единичный столбец
+                X.rounding();
                 //надо обновлять, т.к. можно найти строку, которую уже использовали
                 ones = X.getOnesColumns();
             }
@@ -299,6 +364,7 @@ public class SolveEquations {
     private static List<StringBuilder> getExpression(Matrix M, Integer[] comb){
         //Выражает базовые переменные через свободные в строковом виде
         List<StringBuilder> expr = new ArrayList<>();
+        M.rounding();
         for (int i=0; i<comb.length; i++){
             StringBuilder s = new StringBuilder();
             int r = findRow(M, comb[i]);

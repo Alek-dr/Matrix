@@ -1,6 +1,7 @@
 package matrixapplication;
 
 import MatrixLib.Algorithms;
+import MatrixLib.FunctionParser;
 import MatrixLib.Matrix;
 import MatrixLib.SolveEquations;
 import javafx.beans.binding.Bindings;
@@ -22,6 +23,8 @@ public class Controller implements Initializable, MessageListener {
     @FXML
     private Button execute;
     @FXML
+    private Button clear;
+    @FXML
     private TextArea resField;
     @FXML
     private TextArea rows;
@@ -33,6 +36,11 @@ public class Controller implements Initializable, MessageListener {
     private ScrollPane pane;
     @FXML
     private ListView actions;
+    @FXML
+    private TextArea function;
+
+    private List<Matrix> basisSolutions = new ArrayList<>();
+    private List<Integer> bfs = new ArrayList<>();
 
     private ChangeListener<String> dimensiomChange;
 
@@ -54,6 +62,7 @@ public class Controller implements Initializable, MessageListener {
         //Выравнивание по центру матрицы
         matrixGrid.minWidthProperty().bind(Bindings.createDoubleBinding(() ->
                 pane.getViewportBounds().getWidth(), pane.viewportBoundsProperty()));
+        clear.minWidthProperty().bind(execute.widthProperty());
         //Изменение размерности матрицы
         dimensiomChange = (observable, oldValue, newValue) -> {
             try{
@@ -62,6 +71,8 @@ public class Controller implements Initializable, MessageListener {
                     setMatrix(n, Integer.parseInt(cols.getText()));
                 else
                     setMatrix(Integer.parseInt(rows.getText()),n);
+                basisSolutions.clear();
+                bfs.clear();
             }catch (Exception ex){}
         };
         resField.textProperty().addListener((observable, oldValue, newValue) ->
@@ -70,6 +81,8 @@ public class Controller implements Initializable, MessageListener {
         act.add("Алгоритм Гаусса");
         act.add("Алгоритм Гаусса-Жордана");
         act.add("Все базисные виды");
+        act.add("Все опорные планы");
+        act.add("Оптимальный план");
         matrixActions = FXCollections.observableList(act);
         actions.setItems(matrixActions);
         rows.setText("3");
@@ -93,12 +106,25 @@ public class Controller implements Initializable, MessageListener {
     }
 
     @FXML
+    protected void onClear(ActionEvent event) throws Exception {
+        basisSolutions.clear();
+        bfs.clear();
+    }
+
+    @FXML
     protected void onExecClick(ActionEvent event) throws Exception {
         Matrix M = getMatrix();
         String action = (String)actions.getSelectionModel().getSelectedItem();
         switch (action){
             case("Алгоритм Гаусса"):{
-                Algorithms.Gauss(M);
+                Thread t = new Thread(()->{
+                    try{
+                        Algorithms.Gauss(M);
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                });
+                t.start();
                 break;
             }
             case("Алгоритм Гаусса-Жордана"):{
@@ -115,7 +141,45 @@ public class Controller implements Initializable, MessageListener {
             case("Все базисные виды"):{
                 Thread t = new Thread(() -> {
                     try {
-                        SolveEquations.findAllBasis(M);
+                        basisSolutions.clear();
+                        basisSolutions =  SolveEquations.findAllBasis(M);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+                t.start();
+                break;
+            }
+            case("Все опорные планы"):{
+                if(basisSolutions.size()>0){
+                    Thread t = new Thread(() -> {
+                        try {
+                            bfs = SolveEquations.basicFeasibleSolution(basisSolutions);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    t.start();
+                }else {
+                    Thread t = new Thread(() -> {
+                        try {
+                            basisSolutions =  SolveEquations.findAllBasis(M);
+                            bfs = SolveEquations.basicFeasibleSolution(basisSolutions);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    t.start();
+                }
+                break;
+            }
+            case("Оптимальный план"):{
+                Thread t = new Thread(() -> {
+                    try {
+                        double [] coefficients = FunctionParser.getCoefficient(function.getText());
+                        if(basisSolutions.size()>0){
+                            double max = SolveEquations.findMax(basisSolutions, bfs, coefficients);
+                        }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
