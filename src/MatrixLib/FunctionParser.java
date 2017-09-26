@@ -10,7 +10,10 @@ import java.util.regex.Pattern;
  */
 public class FunctionParser {
 
-    static final Pattern justNumb =  Pattern.compile("(-|\\+)?\\d(\\.\\d)?");
+    //Не очень хороший парсер. Слагаемые надо обязательно приводить
+
+    //static final Pattern justNumb =  Pattern.compile("(-|\\+)?\\d(\\.\\d)?");
+    static final Pattern justNumb =  Pattern.compile("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?");
     static final Pattern variable = Pattern.compile("[-+]?\\d?(\\.\\d)?[Xx][0-9]*");
 
     public static double[] getCoefficient(String z){
@@ -23,7 +26,7 @@ public class FunctionParser {
             String v = matcher.group();
             if(v=="") continue;
             expr.add(v);
-            z = z.replace(v, "");
+            z = z.replace(v, ""); //если не привести подобные, вот здесь образуются проблемы
         }
         //Теперь выражение содержит только свободные члены
         matcher = justNumb.matcher(z);
@@ -45,9 +48,12 @@ public class FunctionParser {
                 x.add(Integer.parseInt(parts[1]));
                 coef.add(1.0);
             }else{
-                if(parts[0].equals(""))
+                if(parts[0].equals("")|parts[0].equals("+"))
                     coef.add(1.0);
-                else coef.add(Double.parseDouble(parts[0]));
+                else if(parts[0].equals("-"))
+                    coef.add(-1.0);
+                else
+                    coef.add(Double.parseDouble(parts[0]));
                 x.add(Integer.parseInt(parts[1]));
             }
         }
@@ -55,7 +61,7 @@ public class FunctionParser {
         double [] coefficients = new double[size];
         for(int i=0; i<x.size(); i++){
             int c = x.get(i)-1;
-            coefficients[c] = coef.get(i);
+            coefficients[c] += coef.get(i);
         }
         coefficients[size-1] = N; //свободный член
         return coefficients;

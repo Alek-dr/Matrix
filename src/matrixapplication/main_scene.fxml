@@ -33,11 +33,11 @@
         <RowConstraints maxHeight="50" minHeight="50" />
         <RowConstraints maxHeight="50" minHeight="50" />
         <RowConstraints maxHeight="20" minHeight="20" />
-        <RowConstraints maxHeight="50" minHeight="50" />
-        <RowConstraints maxHeight="50" minHeight="50" />
-        <RowConstraints maxHeight="50" minHeight="50" />
-        <RowConstraints maxHeight="50" minHeight="50" />
-        <RowConstraints maxHeight="50" minHeight="50" />
+        <RowConstraints minHeight="50" />
+        <RowConstraints minHeight="50" />
+        <RowConstraints minHeight="50" />
+        <RowConstraints minHeight="50" />
+        <RowConstraints minHeight="50" />
     </rowConstraints>
     <Label text="Z=" GridPane.columnIndex="1" GridPane.columnSpan="1" GridPane.rowIndex="6" GridPane.rowSpan="1" />
     <TextArea fx:id="function" maxHeight="20" GridPane.columnIndex="2" GridPane.columnSpan="5" GridPane.rowIndex="6" GridPane.rowSpan="1">

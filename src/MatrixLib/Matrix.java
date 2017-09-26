@@ -156,7 +156,7 @@ public class Matrix {
                 matr[i][j] = round(matr[i][j],round);
     }
 
-    private double round(double number, int scale) {
+    static protected double round(double number, int scale) {
         int pow = 10;
         for (int i = 1; i < scale; i++)
             pow *= 10;
@@ -328,14 +328,28 @@ public class Matrix {
             return;
         }
         List<Integer> RowToDelete = new ArrayList<Integer>();
-        Matrix V = new Matrix(col, 1);
-        for (int i = 0; i < V.row; i++)
-            V.matr[i][0] = 1;
-        Matrix zRow = multiplyByMatrix(this,V);
-        for (int i = 0; i < zRow.row; i++)
-            if (zRow.matr[i][0] == 0)
+        boolean zero;
+        for(int i=0; i<row; i++){
+            zero = true;
+            for(int j=0; j<col; j++){
+                if(matr[i][j]!=0){
+                    zero = false;
+                    break;
+                }
+            }
+            if(zero)
                 RowToDelete.add(i);
+        }
         deleteRows(RowToDelete);
+//        List<Integer> RowToDelete = new ArrayList<Integer>();
+//        Matrix V = new Matrix(col, 1);
+//        for (int i = 0; i < V.row; i++)
+//            V.matr[i][0] = 1;
+//        Matrix zRow = multiplyByMatrix(this,V);
+//        for (int i = 0; i < zRow.row; i++)
+//            if (zRow.matr[i][0] == 0)
+//                RowToDelete.add(i);
+//        deleteRows(RowToDelete);
     }
 
     protected List<Integer> excludeZeroRow2() throws Exception{
@@ -344,13 +358,27 @@ public class Matrix {
             return new ArrayList<>();
         }
         List<Integer> RowToDelete = new ArrayList<Integer>();
-        Matrix V = new Matrix(col, 1);
-        for (int i = 0; i < V.row; i++)
-            V.matr[i][0] = 1;
-        Matrix zRow = multiplyByMatrix(this,V);
-        for (int i = 0; i < zRow.row; i++)
-            if (zRow.matr[i][0] == 0)
+//        //я конечно очень хитрый, но для неквадратной матрицы не работает
+//        Matrix V = new Matrix(col, 1);
+//        for (int i = 0; i < V.row; i++)
+//            V.matr[i][0] = 1;
+//        Matrix zRow = multiplyByMatrix(this,V);
+//        for (int i = 0; i < zRow.row; i++)
+//            if (zRow.matr[i][0] == 0)
+//                RowToDelete.add(i);
+//        deleteRows(RowToDelete);
+        boolean zero;
+        for(int i=0; i<row; i++){
+            zero = true;
+            for(int j=0; j<col; j++){
+                if(matr[i][j]!=0){
+                    zero = false;
+                    break;
+                }
+            }
+            if(zero)
                 RowToDelete.add(i);
+        }
         deleteRows(RowToDelete);
         return RowToDelete;
     }

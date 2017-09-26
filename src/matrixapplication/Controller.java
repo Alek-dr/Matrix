@@ -109,6 +109,7 @@ public class Controller implements Initializable, MessageListener {
     protected void onClear(ActionEvent event) throws Exception {
         basisSolutions.clear();
         bfs.clear();
+        resField.clear();
     }
 
     @FXML

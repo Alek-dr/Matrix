@@ -52,7 +52,7 @@ public class SolveEquations {
         int n;
         int col;
         if (key == 0) n = M.col;
-        else n = M.row;
+            else n = M.row;
         for (int z = 0; z < n; z++) {
             //если на последнем шаге были исключены нулевые строки
             if(z==X.row) return X;
@@ -64,6 +64,7 @@ public class SolveEquations {
             col = (int)res[1]; //столбец с разрешающим элементом
             colI = col+1;
             resElem = res[2]; //сам разрешающий элемент
+            X.rounding();
             X.message = new StringBuilder("Разрешающий элемент: "+ X.nf.format(resElem) +  " в " + strI + " строке, " + colI + " столбце");
             runAndWait(()-> {
                 listeners.forEach(l -> l.onMessage(X.message));
@@ -84,6 +85,7 @@ public class SolveEquations {
             row2ex.clear();
             for (int i : row2ex) X.message.append(i+1 + " ");
             row2ex = X.excludeZeroRow2();
+            X.rounding();
             if(row2ex.size()>0){
                 X.message = new StringBuilder("Исключили нулевые строки: ");
                 runAndWait(()-> {
@@ -130,6 +132,7 @@ public class SolveEquations {
             runAndWait(()-> listeners.forEach(l -> l.onMessage(s)));
         runAndWait(()-> listeners.forEach(l -> l.onMessage(separate)));
         StringBuilder workMatr = new StringBuilder("Система для дальнейших преобразований: ");
+        X.rounding();
         runAndWait(()-> {
             listeners.forEach(l -> l.onMessage(workMatr));
             listeners.forEach(l -> l.onMatrixChange(X));
@@ -156,6 +159,7 @@ public class SolveEquations {
             for(StringBuilder s : expr)
                 runAndWait(()-> listeners.forEach(l -> l.onMessage(s)));
             //runAndWait(()-> listeners.forEach(l -> l.onMessage(separate)));
+            X.rounding();
             runAndWait(()-> {
                 //listeners.forEach(l -> l.onMessage(workMatr));
                 listeners.forEach(l -> l.onMatrixChange(X));
@@ -190,6 +194,8 @@ public class SolveEquations {
                 });
             }
         }
+        if(basFesSol.isEmpty())
+            runAndWait(()-> listeners.forEach(l -> l.onMessage(new StringBuilder("Опорных решений не найдено"))));
         return basFesSol;
     }
 
@@ -215,6 +221,8 @@ public class SolveEquations {
             currMax+=coefficents[coefficents.length-1]; //плюс свободный член самой функции
             if(currMax>max)
                 max = currMax;
+            max = Matrix.round(max,3);
+            currMax = Matrix.round(currMax, 3);
             StringBuilder msg = new StringBuilder("Max = ");
             msg.append(currMax);
             runAndWait(()-> listeners.forEach(l -> l.onMessage(msg)));
@@ -238,6 +246,7 @@ public class SolveEquations {
             strI = i+1;
             strZ = row+1;
             x.addRowMultiplyedByNumber(row, divBy, i);
+            x.rounding();
             x.message = new StringBuilder("Добавили к строке " + strI + " строку " + strZ + ", умноженную на " + x.nf.format(divBy));
             runAndWait(()-> {
                 //listeners.forEach(l -> l.onMessage(x.message));
