@@ -1,9 +1,6 @@
 package matrixapplication;
 
-import MatrixLib.Algorithms;
-import MatrixLib.FunctionParser;
-import MatrixLib.Matrix;
-import MatrixLib.SolveEquations;
+import MatrixLib.*;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
@@ -51,6 +48,7 @@ public class Controller implements Initializable, MessageListener {
     public void initialize(URL location, ResourceBundle resources) {
         SolveEquations.addListeners(this);
         Algorithms.addListeners(this);
+        SimplexAlgorithm.addListeners(this);
         execute.setMaxWidth(Double.MAX_VALUE);
         resField.setMaxHeight(Double.MAX_VALUE);
         resField.setEditable(true);
@@ -83,6 +81,7 @@ public class Controller implements Initializable, MessageListener {
         act.add("Все базисные виды");
         act.add("Все опорные планы");
         act.add("Оптимальный план");
+        act.add("Симплекс метод");
         matrixActions = FXCollections.observableList(act);
         actions.setItems(matrixActions);
         rows.setText("3");
@@ -187,6 +186,16 @@ public class Controller implements Initializable, MessageListener {
                 });
                 t.start();
                 break;
+            }
+            case("Симплекс метод"):{
+                Thread t = new Thread(()->{
+                    try {
+                        SimplexAlgorithm.simplexAlgorithm(M);
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                });
+                t.start();
             }
         }
     }

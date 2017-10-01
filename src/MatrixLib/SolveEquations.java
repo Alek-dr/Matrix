@@ -233,7 +233,7 @@ public class SolveEquations {
 
     //region вспомогательные методы для Гаусса-Жордана и нахождения всех базисов
 
-    private static void makeOneCol(int row, Matrix x, int col) throws ExecutionException, InterruptedException, IncompabilitySystem {
+    protected static void makeOneCol(int row, Matrix x, int col) throws ExecutionException, InterruptedException, IncompabilitySystem {
         //метод формирует единичный столбец col матрицы x,
         //ведущая строка row
         double divBy;
