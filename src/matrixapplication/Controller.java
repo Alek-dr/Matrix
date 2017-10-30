@@ -82,6 +82,7 @@ public class Controller implements Initializable, MessageListener {
         act.add("Все опорные планы");
         act.add("Оптимальный план");
         act.add("Симплекс метод");
+        act.add("Искусственный базис");
         matrixActions = FXCollections.observableList(act);
         actions.setItems(matrixActions);
         rows.setText("3");
@@ -190,7 +191,18 @@ public class Controller implements Initializable, MessageListener {
             case("Симплекс метод"):{
                 Thread t = new Thread(()->{
                     try {
-                        SimplexAlgorithm.simplexAlgorithm(M);
+                        SimplexAlgorithm.simplexAlgorithm(M,true);
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                });
+                t.start();
+            }
+            case("Искусственный базис"):{
+                Thread t = new Thread(()->{
+                    try {
+                        double [] coefficients = FunctionParser.getCoefficient(function.getText());
+                        SimplexAlgorithm.syntheticBasis(M, coefficients);
                     }catch (Exception ex){
                         ex.printStackTrace();
                     }

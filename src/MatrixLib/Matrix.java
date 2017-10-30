@@ -3,6 +3,7 @@ package MatrixLib;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.stream.DoubleStream;
 
 /**
  * Created by Barmin on 31.12.2016.
@@ -383,6 +384,22 @@ public class Matrix {
         return RowToDelete;
     }
 
+    protected void addRow(int pos){
+        double[][] newMatr = new double[row+1][col];
+        boolean offset = false;
+        for(int i=0; i<row; i++){
+            if(i==pos)
+                offset = true;
+            for (int j=0; j<col; j++){
+                if(offset)
+                    newMatr[i+1][j] = matr[i][j];
+                else newMatr[i][j] = matr[i][j];
+            }
+        }
+        matr = newMatr;
+        row+=1;
+    }
+
     //endregion
 
     //region Column operations
@@ -473,6 +490,22 @@ public class Matrix {
                 ColToDelete.add(i);
         for (int j : ColToDelete)
             this.deleteCol(j);
+    }
+
+    protected void addColumn(int pos){
+        double[][] newMatr = new double[row][col+1];
+        boolean offset = false;
+        for(int j=0; j<col; j++){
+            if(j==pos)
+                offset = true;
+            for (int i=0; i<row; i++){
+                if(offset)
+                    newMatr[i][j+1] = matr[i][j];
+                else newMatr[i][j] = matr[i][j];
+            }
+        }
+        matr = newMatr;
+        col+=1;
     }
 
     //endregion
@@ -641,6 +674,13 @@ public class Matrix {
         return res;
     }
 
+    protected double[] getColumn(int c){
+        double [] col = new double[row];
+        for(int i=0; i<row; i++)
+            col[i] = matr[i][c];
+        return col;
+    }
+
     public double getElem(int row, int col){
         return matr[row][col];
     }
@@ -665,17 +705,36 @@ public class Matrix {
         return E;
     }
 
+
+//    public List<Integer> getOnesColumns() {
+//        List<Integer> cols = new ArrayList<>();
+//        for (int j = 0; j < col; j++) {
+//            int r = -1;
+//            for (int i = 0; i < row; i++) {
+//                if (matr[i][j] == 1)
+//                    r = i;
+//                if (matr[i][j] == 0)
+//                    if ((r != -1) & (matr[i][j] != 0)) break;
+//            }
+//            cols.add(r);
+//        }
+//        return cols;
+//    }
+
     public List<Integer> getOnesColumns() {
         List<Integer> cols = new ArrayList<>();
         for (int j = 0; j < col; j++) {
-            int r = -1;
-            for (int i = 0; i < row; i++) {
-                if (matr[i][j] == 1)
-                    r = i;
-                if (matr[i][j] == 0)
-                    if ((r != -1) & (matr[i][j] != 0)) break;
+            double [] col = getColumn(j);
+            int zeros = (int)DoubleStream.of(col).filter(x->x==0).count();
+            int ones = (int)DoubleStream.of(col).filter(x->x==1).count();
+            if(zeros+ones==row){
+                for(int i=0; i<row; i++){
+                    if(col[i]==1)
+                        cols.add(i);
+                }
+            }else {
+                cols.add(-1);
             }
-            cols.add(r);
         }
         return cols;
     }

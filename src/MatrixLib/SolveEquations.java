@@ -76,7 +76,7 @@ public class SolveEquations {
             }
             //формируем единичный столбец
             try{
-                makeOneCol(row, X, col);
+                makeOneCol(row, X, col,true);
             }catch (IncompabilitySystem ex){
                 runAndWait(()-> listeners.forEach(l -> l.onMessage(new StringBuilder(ex.getMessage()))));
                 break;
@@ -159,10 +159,10 @@ public class SolveEquations {
             for(StringBuilder s : expr)
                 runAndWait(()-> listeners.forEach(l -> l.onMessage(s)));
             //runAndWait(()-> listeners.forEach(l -> l.onMessage(separate)));
-            X.rounding();
+            Z.rounding();
             runAndWait(()-> {
                 //listeners.forEach(l -> l.onMessage(workMatr));
-                listeners.forEach(l -> l.onMatrixChange(X));
+                listeners.forEach(l -> l.onMatrixChange(Z));
                 listeners.forEach(l -> l.onMessage(separate));
             });
         }
@@ -233,7 +233,7 @@ public class SolveEquations {
 
     //region вспомогательные методы для Гаусса-Жордана и нахождения всех базисов
 
-    protected static void makeOneCol(int row, Matrix x, int col) throws ExecutionException, InterruptedException, IncompabilitySystem {
+    protected static void makeOneCol(int row, Matrix x, int col, boolean write) throws ExecutionException, InterruptedException, IncompabilitySystem {
         //метод формирует единичный столбец col матрицы x,
         //ведущая строка row
         double divBy;
@@ -247,11 +247,13 @@ public class SolveEquations {
             strZ = row+1;
             x.addRowMultiplyedByNumber(row, divBy, i);
             x.rounding();
-            x.message = new StringBuilder("Добавили к строке " + strI + " строку " + strZ + ", умноженную на " + x.nf.format(divBy));
-            runAndWait(()-> {
-                //listeners.forEach(l -> l.onMessage(x.message));
-                listeners.forEach(l -> l.onMatrixChange(x));
-            });
+            if(write){
+                x.message = new StringBuilder("Добавили к строке " + strI + " строку " + strZ + ", умноженную на " + x.nf.format(divBy));
+                runAndWait(()-> {
+                    //listeners.forEach(l -> l.onMessage(x.message));
+                    listeners.forEach(l -> l.onMatrixChange(x));
+                });
+            }
             if(!checkSystem(x)) throw new IncompabilitySystem("Несовместная система");
         }
     }
@@ -335,7 +337,7 @@ public class SolveEquations {
                     throw new WrongBasis("Невозможно перейти к базису");
                 X.divRowByNumber(r, nToDiv);
                 //sendDivMessage(X, r + 1, nToDiv);
-                makeOneCol(r, X, col); //Сформировать единичный столбец
+                makeOneCol(r, X, col, true); //Сформировать единичный столбец
                 X.rounding();
                 //надо обновлять, т.к. можно найти строку, которую уже использовали
                 ones = X.getOnesColumns();
