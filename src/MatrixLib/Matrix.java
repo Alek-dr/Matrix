@@ -400,6 +400,13 @@ public class Matrix {
         row+=1;
     }
 
+    protected double[] getRow(int c){
+        double [] row_ = new double[col];
+        for(int j=0; j<col; j++)
+            row_[j] = matr[c][j];
+        return row_;
+    }
+
     //endregion
 
     //region Column operations
@@ -506,6 +513,13 @@ public class Matrix {
         }
         matr = newMatr;
         col+=1;
+    }
+
+    protected double[] getColumn(int c){
+        double [] col = new double[row];
+        for(int i=0; i<row; i++)
+            col[i] = matr[i][c];
+        return col;
     }
 
     //endregion
@@ -674,13 +688,6 @@ public class Matrix {
         return res;
     }
 
-    protected double[] getColumn(int c){
-        double [] col = new double[row];
-        for(int i=0; i<row; i++)
-            col[i] = matr[i][c];
-        return col;
-    }
-
     public double getElem(int row, int col){
         return matr[row][col];
     }
@@ -705,6 +712,23 @@ public class Matrix {
         return E;
     }
 
+    public double getMax(){
+        double max = matr[0][0];
+        for(int i=0; i<row;i++)
+            for(int j=0; j<col; j++)
+                if(matr[i][j]>max)
+                    max = matr[i][j];
+        return max;
+    }
+
+    public double getMin(){
+        double min = matr[0][0];
+        for(int i=0; i<row;i++)
+            for(int j=0; j<col; j++)
+                if(matr[i][j]<min)
+                    min = matr[i][j];
+        return min;
+    }
 
 //    public List<Integer> getOnesColumns() {
 //        List<Integer> cols = new ArrayList<>();
@@ -727,7 +751,7 @@ public class Matrix {
             double [] col = getColumn(j);
             int zeros = (int)DoubleStream.of(col).filter(x->x==0).count();
             int ones = (int)DoubleStream.of(col).filter(x->x==1).count();
-            if(zeros+ones==row){
+            if((zeros==row-1)&(ones==1)){
                 for(int i=0; i<row; i++){
                     if(col[i]==1)
                         cols.add(i);

@@ -83,6 +83,7 @@ public class Controller implements Initializable, MessageListener {
         act.add("Оптимальный план");
         act.add("Симплекс метод");
         act.add("Искусственный базис");
+        act.add("Метод больших штрафов");
         matrixActions = FXCollections.observableList(act);
         actions.setItems(matrixActions);
         rows.setText("3");
@@ -208,6 +209,19 @@ public class Controller implements Initializable, MessageListener {
                     }
                 });
                 t.start();
+                break;
+            }
+            case("Метод больших штрафов"):{
+                Thread t = new Thread(()->{
+                    try {
+                        double [] coefficients = FunctionParser.getCoefficient(function.getText());
+                        SimplexAlgorithm.penaltyMethod(M, coefficients);
+                    }catch (Exception ex){
+                        ex.printStackTrace();
+                    }
+                });
+                t.start();
+                break;
             }
         }
     }
